@@ -2,7 +2,7 @@
 
 This document describes how a one-person company can be organized as a team of AI agents plus one human. It is the "org chart and operating system" layer. If you want the rollout mechanics — who builds what, in which order — see [runbook.md](runbook.md). For the role catalog and how roles mature, see [roles.md](roles.md).
 
-This is not theory. It is the generalized write-up of a system actually running a real, one-person, revenue-generating company.
+This is the generalized write-up of the system Late runs on: one person, AI agents, and the gates below.
 
 ## The core rule
 

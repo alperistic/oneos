@@ -1,174 +1,111 @@
-# oneOS
+# How Late runs
 
-**The operating system of a one-person company.**
+Late is run by one person with AI agents. This repository describes the
+setup as it runs today and holds a template for its memory. The short
+version lives at
+[late-systems.vercel.app/system](https://late-systems.vercel.app/system).
 
-*I run a software company alone — a German B2B SaaS with real users, real
-GDPR constraints, and real production incidents. What makes that workable
-isn't one heroic AI assistant. It's an operating system: a shared memory,
-a handful of defined roles, and rules about what agents may and may not do.
-This repo is that system, extracted as a template — including the parts
-that don't work yet.*
+## Memory: Markdown in Git
 
-## The problem nobody tells you about
+- One vault is the only shared memory: decisions, research, project
+  state. Notes are filed by written rules (`AGENTS.md`, `WORKFLOW.md`,
+  `schema.md`).
+- Three writers: the founder in Obsidian, Claude Code on the Mac, and
+  Hermes on a server. Each pulls with rebase before it writes.
+- On the server, a job commits, rebases and pushes the vault every ten
+  minutes, then re-indexes it for search. On a conflict it stops and
+  reports instead of resolving it.
+- Agents search the vault before they answer. What is not in the vault
+  is not known.
 
-Everyone shows you the demo where an agent writes code. Nobody shows you
-week three, when you have five chat histories with five different
-"assistants", none of them knows what the others did, and you've become a
-full-time messenger between your own tools.
+→ [`brain-template/`](brain-template/)
 
-The bottleneck of a one-person company was never typing speed. It's state:
-who knows what, what's decided, what's next. A human team solves this with
-meetings and shared context. My agents don't attend meetings. So they need
-something better.
+## Building: Claude Code
 
-## The one rule everything follows
+- Every repository has a `CLAUDE.md`: commands, deploy path,
+  conventions, and the honesty rules that apply there. A global file on
+  top sets language, autonomy and when to stop and ask.
+- Models are split by job. The main session plans and reviews. Code is
+  written by a subagent on Opus from a spec (files, constraints,
+  definition of done). Searching and small edits go to Sonnet.
+- A hook blocks code edits of more than five lines in the main session,
+  so the split holds. The rest of the routing is written discipline.
+- One session, one pull request. The pull request body is the handoff.
+  Review and fixes run in a new, short session.
+- Working preferences carry between sessions as small memory files per
+  project.
 
-> **Agents research, draft and prepare. Deterministic systems calculate and
-> check. The human decides everything that touches the outside world.**
+## Review: a second model
 
-This came out of building my product, where an LLM extracts a customer
-request but is never allowed to invent a price — prices come from a
-database, totals from tested code. Generalized, it became the constitution
-of the whole company. Every rule in this repo is this rule applied
-somewhere.
+- Pull requests in offerre's repository run CI: tests, migrations up and
+  down, lint, end-to-end tests in a browser, and a weekly dependency
+  audit.
+- Codex, a model from another vendor, reviews most of them on GitHub.
+  Claude addresses its comments; the founder merges by hand.
+- A local Codex review is kept for large or risky changes. Its findings
+  are checked against the code before anything is changed.
 
-## A real day
+## Running: Hermes
 
-Morning: I read a briefing an agent assembled from the work queue, the
-issue tracker and the pipeline — and decide the one thing that matters
-today. During the day: I dispatch tasks in plain language; roles do their
-work and file artifacts; git commits accumulate in the Brain. Evening: I
-review and approve what wants to leave the building — an outreach draft, a
-PR, a post. My calendar has almost no execution left in it. What remains is
-judgment.
+- Hermes is an agent on a rented server, reached over Telegram. Its
+  dashboard is only reachable inside a private network.
+- It works in profiles by domain: personal, business, inbox, ops,
+  research and others. Profiles that face the outside, such as inbox
+  and outreach, only write drafts.
+- Scheduled jobs: the vault sync every ten minutes, a daily encrypted
+  backup with a tested restore, and a daily check of the vault's Git
+  state.
 
-That's the end state this template points at. You won't start there, and
-neither did I — see the maturity path below.
+## Gates
 
-## Getting started
+- Human in the loop: nothing is merged, sent, published, deployed or
+  paid without the person.
+- No customer names, addresses or phone numbers in prompts.
+- A fact that cannot be checked is marked as missing, not filled in.
+- Pages and repositories claim only what runs. Planned things are
+  labelled planned.
 
-Day one, in four steps. Don't skip ahead.
+## Counted on 23 October 2026
 
-1. **Create your Brain.** Copy [`brain-template/`](brain-template/) into a
-   fresh git repo. This becomes the only shared memory: every decision,
-   research note and project state lives here as a markdown file, filed by
-   a written routing rule. If it's not in the Brain, it didn't happen.
-2. **Spec one role.** Copy [`templates/role-spec.md`](templates/role-spec.md)
-   and fill it in for the most annoying recurring task you have. One
-   mandate, allowed tools, one success criterion, hard guardrails. Steal
-   from the four examples in [`roles/`](roles/).
-3. **Run it on-demand.** You start it, you watch it, it ends every run by
-   writing a handoff note ([`templates/handoff.md`](templates/handoff.md))
-   and updating the work queue
-   ([`templates/work-queue.md`](templates/work-queue.md)).
-4. **Make it earn its promotion.** After a few real runs, score it against
-   the eval checklist in its spec. Only a role that passes on real work
-   gets scheduled. Until then it stays supervised.
-
-## The architecture, in one diagram
-
-```
-        Me — direction, approvals, hard calls
-                        │
-        ┌───────────────┼────────────────┐
-   orchestration: dispatch · eval · brain steward
-        │               │                │
-  Knowledge/Research  Product/Eng     Go-to-Market
-  Insights/Content    Operations
-        │               │                │
-        └────────── the Brain ───────────┘
-        (git-backed markdown, the only shared memory)
-```
-
-Five things carry the system:
-
-1. **The Brain — one memory, under version control.** A plain markdown
-   vault, git-backed, synced between my laptop, an always-on server agent,
-   and my notes app. No agent "remembers" anything privately. Agents are
-   disposable; the Brain is the asset. →
-   [`docs/architecture.md`](docs/architecture.md)
-2. **Handoffs are artifacts, not conversations.** Agents never talk to each
-   other live. One finishes by writing a note with a fixed closing block —
-   *what's done, what's open, next step, who's up, confidence* — and the
-   next one reads it. Any agent (or I) can pick up any thread cold, weeks
-   later. Amnesia becomes a feature. →
-   [`templates/handoff.md`](templates/handoff.md)
-3. **A work queue that is just a file.** No queue service, no framework.
-   One markdown file: task, role, status, output link. I can read my
-   company's entire backlog in one screen. →
-   [`templates/work-queue.md`](templates/work-queue.md)
-4. **Roles with a maturity path.** Every role starts as a spec, then has to
-   earn autonomy: on-demand (I start it, I watch it) → eval gate (does it
-   pass real checks on real work?) → scheduled (it runs without me). Never
-   automate a role that hasn't earned it. → [`docs/roles.md`](docs/roles.md)
-5. **Hard boundaries the system stops at.** Every send, publish, deploy and
-   payment requires me. Customer master data never enters a prompt (GDPR
-   isn't optional in Germany). Money is handled by code with decimals,
-   never by a model. When an agent isn't confident, its job is to mark and
-   escalate, not to guess. → [`docs/architecture.md`](docs/architecture.md)
-
-## The honest part
-
-Current state of my own instance of this system:
-
-| Stage | Roles |
+| Count | Number |
 |---|---|
-| Specified | 13 |
-| Running for real (on-demand, supervised) | 4 |
-| Scheduled / event-triggered | 0 |
-| Fully autonomous | 0 |
+| Notes in the vault | 712 |
+| Vault commits in the last 30 days | 92 |
+| Repositories with a CLAUDE.md | 11 |
+| Hermes profiles | 13 |
+| Agent skills written | 13 |
+| Agent skills on a schedule | 0 |
 
-The four that run: coding, brain-stewardship, research digests, and lead
-verification — the last one passed its eval gate on three batches of live
-work. Most "agent company" posts skip this column. I think the maturity
-path *is* the product.
+## Written, barely used
 
-## What breaks (so you don't have to find out)
+Late also keeps a library of 13 skills for one central agent: lead
+verification, outreach drafts, a weekly report, bug triage and others.
+Each is started by hand, none runs on a schedule, and the last queue
+entry is from August 2026. The specs and templates in this repository
+come from that library.
 
-- **The system rots without daily use.** Skip three days of filing and the
-  Brain drifts from reality; every artifact after that inherits the drift.
-  Git discipline — pull, small commits, push — is the actual load-bearing
-  habit, and it's boring.
-- **Concept production is a failure mode.** Agents make writing strategy
-  documents so cheap that "planning" becomes procrastination with extra
-  steps. I had to write an explicit rule: after this note, ship code or
-  nothing. I've broken it more than once.
-- **Autonomy is earned slower than you want.** My promotion pipeline exists
-  precisely because the first "just let it run" experiments produced
-  confident garbage.
-- **Three writers, one repo, real merge conflicts.** Me, a desktop agent
-  and a server agent share the vault. The only fix is discipline: rebase
-  before, push after, and a human resolves conflicts.
+## What breaks
 
-One of my favorite failures: a research agent couldn't find a repo it
-expected, and instead of hallucinating progress, it labeled every claim it
-couldn't check as "unverified". That's the system working.
+- **Backups failed quietly.** From early August to 21 October the daily
+  backup did not run, while the runbook said it did. A health check
+  found it; the restore is now tested.
+- **Memory drifts when filing stops.** A few days without notes and the
+  vault no longer matches what happened.
+- **Plans get too cheap.** Agents make strategy notes so easy to write
+  that planning replaces shipping. Late keeps a rule against it and has
+  broken it.
+- **Several writers, one repository.** Conflicts happen. The sync stops
+  and the person resolves them.
 
-## What's in this repo
+## In this repository
 
 | Path | What it is |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | The full system: principles, boundaries, eval loop, maturity stages |
-| [`docs/roles.md`](docs/roles.md) | How roles are defined, operated and promoted |
-| [`docs/runbook.md`](docs/runbook.md) | Division of labor between you, a desktop agent and a server agent; rollout sequence |
-| [`docs/improvement-loop.md`](docs/improvement-loop.md) | How the system learns from its own failures |
-| [`brain-template/`](brain-template/) | The Brain skeleton: filing rules, note schema, routing, agent protocol |
-| [`roles/`](roles/) | Four worked example specs, generalized from real roles in the catalog: lead verification, daily briefing, bug triage, research digest |
-| [`templates/`](templates/) | Work queue, handoff block, empty role spec |
-
-## Why I published this
-
-Frameworks answer "how do I orchestrate agents in code". Almost nobody
-answers "how do I run a company with an agent team" — with the file
-structure, the role specs, the queue, the handoff format, the eval
-checklist. So I extracted mine: an opinionated template, zero
-configuration, exactly the way I run it. Not because it's perfect —
-because it's real, and it built a real product.
-
-Take it, run one role on-demand this week, and make it earn its promotion.
-
-*Built solo, in public.*
+| [`brain-template/`](brain-template/) | Vault skeleton: filing rules, note schema, routing, agent protocol |
+| [`docs/`](docs/) | Architecture, gates and the eval path, written for the skill library |
+| [`roles/`](roles/) | Four example specs from the skill library, generalized |
+| [`templates/`](templates/) | Work queue, handoff block, empty spec |
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Open source by Late.
