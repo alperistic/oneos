@@ -5,14 +5,6 @@ setup as it runs today and holds a template for its memory. The short
 version lives at
 [late-systems.vercel.app/system](https://late-systems.vercel.app/system).
 
-## The rule
-
-**A model drafts, code checks, a person decides.**
-
-Models read, research and write drafts, including code. Code computes and
-checks: tests, migrations, totals, formats. A person makes every call
-that leaves the house: merging, deploying, sending, publishing, paying.
-
 ## Memory: Markdown in Git
 
 - One vault is the only shared memory: decisions, research, project
@@ -66,7 +58,8 @@ that leaves the house: merging, deploying, sending, publishing, paying.
 
 ## Gates
 
-- Nothing is sent, published, deployed or paid without the person.
+- Human in the loop: nothing is merged, sent, published, deployed or
+  paid without the person.
 - No customer names, addresses or phone numbers in prompts.
 - A fact that cannot be checked is marked as missing, not filled in.
 - Pages and repositories claim only what runs. Planned things are
