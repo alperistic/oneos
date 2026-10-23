@@ -1,94 +1,117 @@
 # How Late runs
 
-Late is run by one person with AI agents. This repository describes how
-work, memory and decisions move inside Late, and holds the templates it
-uses. The same description lives at
+Late is run by one person with AI agents. This repository describes the
+setup as it runs today and holds a template for its memory. The short
+version lives at
 [late-systems.vercel.app/system](https://late-systems.vercel.app/system).
 
 ## The rule
 
 **A model drafts, code checks, a person decides.**
 
-Models read, research and write drafts. Code computes and checks: totals,
-prices, formats, tests. A person makes every call that leaves the house:
-sending, publishing, deploying, paying. Every other rule in this
-repository is this one applied somewhere.
+Models read, research and write drafts, including code. Code computes and
+checks: tests, migrations, totals, formats. A person makes every call
+that leaves the house: merging, deploying, sending, publishing, paying.
 
-## The parts
+## Memory: Markdown in Git
 
-1. **Memory is Markdown in Git.** One vault is the only shared memory.
-   Decisions, research and project state are notes, filed by a written
-   routing rule. A job on a server commits, rebases and pushes the vault
-   every ten minutes, and stops on a conflict instead of resolving it.
-   → [`brain-template/`](brain-template/)
-2. **One agent, a library of skills.** Each skill is a file: what it is
-   for, which tools it may use, where its output goes, its guardrails and
-   its eval. The agent reads the skills that fit the task and works.
-   → [`templates/role-spec.md`](templates/role-spec.md)
-3. **The work queue is one file.** Each entry has an id, a skill, a
-   status (open, claimed, done, blocked) and a link to its output.
-   → [`templates/work-queue.md`](templates/work-queue.md)
-4. **Every run ends with a handoff block.** Done, open, next step, who is
-   up, confidence and sources. The next run, or the person, picks up from
-   the note, not from a chat. → [`templates/handoff.md`](templates/handoff.md)
-5. **The gates do not move.** No sending, publishing, deploying, calendar
-   commitments or payments without the person. No customer names,
-   addresses or phone numbers in prompts. A fact that cannot be checked is
-   marked as missing, not filled in.
-   → [`docs/architecture.md`](docs/architecture.md)
+- One vault is the only shared memory: decisions, research, project
+  state. Notes are filed by written rules (`AGENTS.md`, `WORKFLOW.md`,
+  `schema.md`).
+- Three writers: the founder in Obsidian, Claude Code on the Mac, and
+  Hermes on a server. Each pulls with rebase before it writes.
+- On the server, a job commits, rebases and pushes the vault every ten
+  minutes, then re-indexes it for search. On a conflict it stops and
+  reports instead of resolving it.
+- Agents search the vault before they answer. What is not in the vault
+  is not known.
 
-## Maturity
+→ [`brain-template/`](brain-template/)
 
-Counted from Late's skill library on 23 October 2026.
+## Building: Claude Code
 
-| Stage | Skills |
+- Every repository has a `CLAUDE.md`: commands, deploy path,
+  conventions, and the honesty rules that apply there. A global file on
+  top sets language, autonomy and when to stop and ask.
+- Models are split by job. The main session plans and reviews. Code is
+  written by a subagent on Opus from a spec (files, constraints,
+  definition of done). Searching and small edits go to Sonnet.
+- A hook blocks code edits of more than five lines in the main session,
+  so the split holds. The rest of the routing is written discipline.
+- One session, one pull request. The pull request body is the handoff.
+  Review and fixes run in a new, short session.
+- Working preferences carry between sessions as small memory files per
+  project.
+
+## Review: a second model
+
+- Pull requests in offerre's repository run CI: tests, migrations up and
+  down, lint, end-to-end tests in a browser, and a weekly dependency
+  audit.
+- Codex, a model from another vendor, reviews most of them on GitHub.
+  Claude addresses its comments; the founder merges by hand.
+- A local Codex review is kept for large or risky changes. Its findings
+  are checked against the code before anything is changed.
+
+## Running: Hermes
+
+- Hermes is an agent on a rented server, reached over Telegram. Its
+  dashboard is only reachable inside a private network.
+- It works in profiles by domain: personal, business, inbox, ops,
+  research and others. Profiles that face the outside, such as inbox
+  and outreach, only write drafts.
+- Scheduled jobs: the vault sync every ten minutes, a daily encrypted
+  backup with a tested restore, and a daily check of the vault's Git
+  state.
+
+## Gates
+
+- Nothing is sent, published, deployed or paid without the person.
+- No customer names, addresses or phone numbers in prompts.
+- A fact that cannot be checked is marked as missing, not filled in.
+- Pages and repositories claim only what runs. Planned things are
+  labelled planned.
+
+## Counted on 23 October 2026
+
+| Count | Number |
 |---|---|
-| Written | 13 |
-| Parked | 1 |
-| Started by a person, each run | 12 |
-| Passed an eval on real work | 1 |
-| Scheduled or event-triggered | 0 |
-| Fully autonomous | 0 |
+| Notes in the vault | 712 |
+| Vault commits in the last 30 days | 92 |
+| Repositories with a CLAUDE.md | 11 |
+| Hermes profiles | 13 |
+| Agent skills written | 13 |
+| Agent skills on a schedule | 0 |
 
-A skill moves onto a schedule only after it passes its eval on real work,
-and only when the founder says so. None has been moved yet.
+## Written, barely used
+
+Late also keeps a library of 13 skills for one central agent: lead
+verification, outreach drafts, a weekly report, bug triage and others.
+Each is started by hand, none runs on a schedule, and the last queue
+entry is from August 2026. The specs and templates in this repository
+come from that library.
 
 ## What breaks
 
+- **Backups failed quietly.** From early August to 21 October the daily
+  backup did not run, while the runbook said it did. A health check
+  found it; the restore is now tested.
 - **Memory drifts when filing stops.** A few days without notes and the
-  vault no longer matches what happened. Everything written after that
-  inherits the gap.
+  vault no longer matches what happened.
 - **Plans get too cheap.** Agents make strategy notes so easy to write
   that planning replaces shipping. Late keeps a rule against it and has
   broken it.
-- **Several writers, one repository.** The person, a desktop agent and a
-  server job all write to the vault. Conflicts happen; the sync stops and
-  the person resolves them.
-- **Autonomy comes slower than expected.** The first runs left alone
-  produced confident, wrong output. The eval gate exists because of them.
+- **Several writers, one repository.** Conflicts happen. The sync stops
+  and the person resolves them.
 
 ## In this repository
 
 | Path | What it is |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | Principles, gates, eval loop, maturity stages |
-| [`docs/roles.md`](docs/roles.md) | How a skill is written, run and promoted |
-| [`docs/runbook.md`](docs/runbook.md) | Who does what: the person, a desktop agent, a server agent |
-| [`docs/improvement-loop.md`](docs/improvement-loop.md) | How a failure turns into a rule |
 | [`brain-template/`](brain-template/) | Vault skeleton: filing rules, note schema, routing, agent protocol |
-| [`roles/`](roles/) | Four example specs, generalized from Late's own: lead verification, daily briefing, bug triage, research digest |
+| [`docs/`](docs/) | Architecture, gates and the eval path, written for the skill library |
+| [`roles/`](roles/) | Four example specs from the skill library, generalized |
 | [`templates/`](templates/) | Work queue, handoff block, empty spec |
-
-The docs still call a skill a "role". The fields are the same.
-
-## Using it
-
-1. Copy [`brain-template/`](brain-template/) into a new Git repository.
-2. Write one spec from [`templates/role-spec.md`](templates/role-spec.md)
-   for a task that recurs.
-3. Start every run by hand. End every run with the handoff block and a
-   queue update.
-4. Put it on a schedule only after it passes its eval on real work.
 
 ## License
 
